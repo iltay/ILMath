@@ -1,2 +1,2 @@
 # ILMath
-This repo is just for simple math functions with fsharp
+The goal of repo is using math functions with fsharp
