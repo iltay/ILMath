@@ -7,11 +7,10 @@ module Types =
         | Inf of Sign: Sign
         | Epsilon
         | Integers of Value: int64
-        | Rational of Numurator:int64 * Denominator: int64
         | Real of Value: decimal
 
     type Boundary =
-        | Boundary of (Include: bool * Low: Data) * (Include: bool * Value: Data)
+        | Boundary of Include: bool * Low: Data * Include: bool * Value: Data
 
     type Calcuations  = 
         | Random of Boundary
