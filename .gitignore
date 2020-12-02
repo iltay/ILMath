@@ -4,5 +4,7 @@
 x64/
 [Bb]in/
 [Oo]bj/
+Tests/[Bb]in
+Tests/[Oo]bj
 
 .ionide/

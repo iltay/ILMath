@@ -10,8 +10,7 @@ module Types =
         | Real of Value: decimal
 
     type Boundary =
-        | Boundary of Include: bool * Low: Data * Include: bool * Value: Data
-
+        | Boundary of incLow: bool * lower: Data * incUp: bool * upper: Data
     type Calcuations  = 
         | Random of Boundary
         | Matrice of Data [,]
