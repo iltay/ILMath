@@ -1,68 +1,106 @@
 namespace ILMath
 
-open System
+module Func =
 
-// Types
+    [<Literal>]
+    let identityMin = 1e-15
+    
+    let identity = function
+        | x when abs x < identityMin -> 
+            0.0
+        | x when x - 1. = x - 1. ->
+            x
+        | _ -> 
+            nan
+
 module Matrice =
-    let rec det (matrice: float [,]) = 
-        let rows = Array2D.length1 matrice
-        let columns = Array2D.length2 matrice
-        match rows, columns with
+
+    let sgn i j = -1. ** float (i + j)
+
+    let isSquareMatrice (matrice: 'T [,]) =
+        match Array2D.length1 matrice, Array2D.length2 matrice with
         | m, n when m <> n -> 
             None
-        | 1, 1 -> 
-            matrice.[0,0]
+        | _ -> 
+            matrice
+            |> Array2D.length1
             |> Some
-        | 2, 2 -> 
-            matrice.[0,0] * matrice.[1,1] - matrice.[0,1] * matrice.[1,0]
-            |> Some
-        | m, n ->
-            let sgn i j = -1. ** float (i + j)
-            let matriceWithoutIJ notI notJ =
-               Array2D.init<float> (m - 1) (n - 1) 
-                        (fun i j -> 
-                            match i, j with
-                            | i, j when i < notI && j < notJ ->
-                                matrice.[i, j]
-                            | i, j when i < notI && j = notJ ->
-                                matrice.[i,j + 1]
-                            | i, j when i < notI && j > notJ ->
-                                matrice.[i, j + 1]
-                            | i, j when i = notI && j < notJ ->
-                                matrice.[i + 1,j]
-                            | i, j when i = notI && j = notJ ->
-                                matrice.[i + 1,j + 1]
-                            | i, j when i = notI && j > notJ ->
-                                matrice.[i + 1,j + 1]
-                            | i, j when i > notI && j < notJ ->
-                                matrice.[i + 1,j]
-                            | i, j when i > notI && j = notJ ->
-                                matrice.[i + 1,j + 1]
-                            | i, j when i > notI && j > notJ ->
-                                matrice.[i + 1,j + 1] 
-                        )
-           
-            (matrice
-            |> Array2D.mapi (fun i j el -> printfn "%A" (matriceWithoutIJ i j); sgn i j * el * (matriceWithoutIJ i j |> det |> Option.get)))
-                .[0,*]
-            |> Array.reduce (+)
-            |> Some
+    
+    let minor (matrice: 'T [,]) notI notJ =
 
+        let withoutRow notI (matrice: 'T [,]) = 
+            match notI with
+            | 0 -> 
+                Array2D.init 
+                    (Array2D.length1 matrice - 1)
+                    (Array2D.length2 matrice) 
+                    (fun i j -> 
+                        matrice.[1..,*].[i,j])
+            | row when row = Array2D.length1 matrice - 1 ->
+                Array2D.init 
+                    (Array2D.length1 matrice - 1) 
+                    (Array2D.length2 matrice) 
+                    (fun i j -> 
+                        matrice.[0..row - 1,*].[i,j])
+            | row -> 
+                Array2D.init 
+                    (Array2D.length1 matrice - 1) 
+                    (Array2D.length2 matrice)
+                    (fun i j -> 
+                        [|matrice.[0..row - 1,*] ; matrice.[row..,*]|].[i].[i, j])
 
-type Sign =
-    | Positive
-    | Negative
+        let withoutCol notJ (matrice: 'T [,]) =
+            match notJ with
+            | 0 -> 
+                Array2D.init 
+                    (Array2D.length1 matrice) 
+                    (Array2D.length2 matrice - 1) 
+                    (fun i j -> 
+                        matrice.[*, 1..].[i,j])
+            | col when col = Array2D.length2 matrice - 1 ->
+                Array2D.init 
+                    (Array2D.length1 matrice) 
+                    (Array2D.length2 matrice - 1) 
+                    (fun i j -> 
+                        matrice.[*, 0..col - 1].[i,j])
+            | col -> 
+                Array2D.init 
+                    (Array2D.length1 matrice) 
+                    (Array2D.length2 matrice - 1) 
+                    (fun i j -> 
+                        [|matrice.[*, 0..col - 1] ; matrice.[*, col..]|].[j].[i, j])
 
-type Data =
-    | Nan
-    | Inf of sign: Sign
-    | Epsilon
-    | Integer of value: int64
-    | Real of value: decimal
+        matrice
+        |> withoutRow notI
+        |> withoutCol notJ
 
-type Boundary =
-    | Boundary of incLow: bool * lower: Data * incUp: bool * upper: Data
+    let determinant (matrice: float [,]) = 
 
-// Functions
+        let det (matrice: float [,]) rowCol =
+            match rowCol with
+            | 1 -> 
+                matrice.[0,0]
+                |> Some
+            | 2 -> 
+                matrice.[0,0] * matrice.[1,1] - matrice.[0,1] * matrice.[1,0]
+                |> Some
+            | m ->
+                // ToDO: Check the rows if they are the same or all of the elements are zero
+                // ToDo: Reorder rows of the matrice so zeros can help the calculation at the next step
+                // ToDo: Convert the matrice to the triangular matrice
+                // ToDo: multiply elements in the main diagonal
+                None
 
-// Results
+        matrice
+        |> isSquareMatrice 
+        |> Option.bind 
+            (det matrice)
+        
+    let cofactor (matrice: float [,]) i j = 
+
+        let minorij = minor matrice i j
+
+        minorij
+        |> determinant
+        |> Option.map 
+            ((*) (sgn i j))   
